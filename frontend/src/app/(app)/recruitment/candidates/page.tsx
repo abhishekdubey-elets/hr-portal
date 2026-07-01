@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import { CandidateCard } from "@/components/recruitment/CandidateCard";
+import { ScheduleInterviewModal } from "@/components/recruitment/ScheduleInterviewModal";
+import { useStore } from "@/store";
+import { useHydrated } from "@/hooks/useHydrated";
 import type { Candidate } from "@/types";
 
 const columns = [
@@ -21,31 +24,62 @@ const mockCandidates: Candidate[] = [
 ];
 
 export default function CandidatesPage() {
-  const [candidates] = useState(mockCandidates);
+  const storeCandidates = useStore((s) => s.candidates);
+  const hydrated = useHydrated();
+  const [scheduleFor, setScheduleFor] = useState<Candidate | null>(null);
+
+  // Only merge persisted candidates after hydration to avoid an SSR mismatch.
+  const screened = hydrated ? storeCandidates : [];
+  const candidates = [...screened, ...mockCandidates];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Candidate Pipeline</h1>
-        <p className="text-gray-400 mt-0.5">{candidates.length} candidates across all stages</p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Candidate Pipeline</h1>
+        <p className="mt-0.5 text-gray-400">
+          {candidates.length} candidates across all stages
+          {screened.length > 0 && <span className="text-[#a78bfa]"> · {screened.length} from resume screening</span>}
+        </p>
       </div>
-      <div className="grid grid-cols-5 gap-4 overflow-x-auto min-w-0">
+
+      <div className="grid min-w-0 grid-cols-1 gap-4 overflow-x-auto sm:grid-cols-2 xl:grid-cols-5">
         {columns.map((col) => {
           const colCandidates = candidates.filter((c) => c.stage === col.id);
           return (
             <div key={col.id} className={`border-t-2 ${col.color} pt-3`}>
-              <div className="flex items-center justify-between mb-3">
+              <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-300">{col.label}</h3>
-                <span className="text-xs text-gray-500 bg-[#1E1E24] px-2 py-0.5 rounded-full">{colCandidates.length}</span>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-gray-400">{colCandidates.length}</span>
               </div>
               <div className="space-y-3">
                 {colCandidates.length === 0 ? (
-                  <div className="border-2 border-dashed border-[#1E1E24] rounded-2xl p-6 text-center"><p className="text-xs text-gray-600">No candidates</p></div>
-                ) : colCandidates.map((c) => <CandidateCard key={c.id} candidate={c} />)}
+                  <div className="rounded-2xl border-2 border-dashed border-white/[0.07] p-6 text-center">
+                    <p className="text-xs text-gray-600">No candidates</p>
+                  </div>
+                ) : (
+                  colCandidates.map((c) => (
+                    <CandidateCard
+                      key={c.id}
+                      candidate={c}
+                      onSchedule={c.stage !== "hired" && c.stage !== "interview" ? setScheduleFor : undefined}
+                    />
+                  ))
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <ScheduleInterviewModal
+        open={!!scheduleFor}
+        onClose={() => setScheduleFor(null)}
+        initial={
+          scheduleFor
+            ? { candidate: scheduleFor.name, role: scheduleFor.role, candidateId: scheduleFor.id }
+            : undefined
+        }
+      />
     </div>
   );
 }

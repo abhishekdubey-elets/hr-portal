@@ -74,6 +74,9 @@
     -moz-osx-font-smoothing: grayscale;
     color: var(--text-primary);
     background-color: var(--bg-base);
+    /* Render native controls (date/time pickers, etc.) in dark mode so their
+       icons are visible on dark surfaces. */
+    color-scheme: dark;
     /* Ambient layered glow — two soft radial pools */
     background-image: radial-gradient(
         900px circle at 12% -8%,
@@ -113,6 +116,22 @@
   ::selection {
     background-color: rgba(139, 92, 246, 0.32);
     color: #fff;
+  }
+
+  /* Make date/time picker indicators clearly visible + clickable on dark UI */
+  input[type="date"],
+  input[type="time"] {
+    color-scheme: dark;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.2s;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
   }
 
   :focus-visible {

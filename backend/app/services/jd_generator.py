@@ -152,17 +152,19 @@ async def generate_job_descriptions(job_data: Dict[str, Any], additional_context
     response = await ai_service.complete(
         messages=[{"role": "user", "content": prompt}],
         system=SYSTEM_PROMPT,
-        provider="anthropic",
+        response_format={"type": "json_object"},
     )
 
+    keys = ["professional", "linkedin", "indeed", "short", "internal"]
     try:
         start = response.find("{")
         end = response.rfind("}") + 1
-        json_str = response[start:end]
-        versions = json.loads(json_str)
-        return versions
+        parsed = json.loads(response[start:end])
+        return {k: _stringify(parsed.get(k)) or response for k in keys}
     except Exception as e:
         logger.error(f"Failed to parse JD response: {e}")
+        # Smaller local models may not emit clean JSON — return the raw text so the
+        # UI still shows a usable result.
         return {
             "professional": response,
             "linkedin": response,
@@ -170,3 +172,16 @@ async def generate_job_descriptions(job_data: Dict[str, Any], additional_context
             "short": response[:500],
             "internal": response,
         }
+
+
+def _stringify(value: Any) -> str:
+    """Coerce a JD value (which some models nest as objects) into readable text."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        return "\n".join(f"{k}: {_stringify(v)}" for k, v in value.items())
+    if isinstance(value, list):
+        return "\n".join(f"- {_stringify(v)}" for v in value)
+    return str(value)

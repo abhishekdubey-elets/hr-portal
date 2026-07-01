@@ -5,19 +5,24 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { useStore } from "@/store";
+import { useHydrated } from "@/hooks/useHydrated";
 import { cn } from "@/lib/utils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, setSidebarCollapsed } = useStore();
+  const hydrated = useHydrated();
   const pathname = usePathname();
+
+  // Match the server (expanded) on first render; apply the persisted state after mount.
+  const collapsed = hydrated && sidebarCollapsed;
 
   return (
     <div className="min-h-screen bg-base">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar collapsed={collapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <div
         className={cn(
           "transition-[margin] duration-300 ease-out",
-          sidebarCollapsed ? "md:ml-[84px]" : "md:ml-[268px]"
+          collapsed ? "md:ml-[84px]" : "md:ml-[268px]"
         )}
       >
         <TopNav />

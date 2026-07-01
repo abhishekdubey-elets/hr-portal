@@ -1,15 +1,18 @@
 "use client";
-import { MapPin, Briefcase, Star } from "lucide-react";
+import { MapPin, Briefcase, Star, CalendarPlus } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { cn, getInitials } from "@/lib/utils";
 import type { Candidate } from "@/types";
 
-interface CandidateCardProps { candidate: Candidate; }
+interface CandidateCardProps {
+  candidate: Candidate;
+  onSchedule?: (candidate: Candidate) => void;
+}
 
 const scoreColor = (s: number) => s >= 85 ? "text-green-400" : s >= 70 ? "text-yellow-400" : "text-red-400";
 const scoreRing = (s: number) => s >= 85 ? "border-green-500/50" : s >= 70 ? "border-yellow-500/50" : "border-red-500/50";
 
-export function CandidateCard({ candidate: c }: CandidateCardProps) {
+export function CandidateCard({ candidate: c, onSchedule }: CandidateCardProps) {
   return (
     <div className="bg-[#16161A] border border-[#1E1E24] rounded-2xl p-4 hover:border-purple-500/30 transition-colors cursor-pointer group">
       <div className="flex items-start gap-3 mb-3">
@@ -60,6 +63,18 @@ export function CandidateCard({ candidate: c }: CandidateCardProps) {
           <Star className="w-3 h-3 text-yellow-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-gray-400 line-clamp-1">{c.pros[0]}</p>
         </div>
+      )}
+      {onSchedule && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onSchedule(c);
+          }}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#8B5CF6]/25 bg-[#8B5CF6]/10 py-2 text-xs font-medium text-[#c4b5fd] transition-colors hover:bg-[#8B5CF6]/20"
+        >
+          <CalendarPlus className="h-3.5 w-3.5" />
+          Schedule Interview
+        </button>
       )}
     </div>
   );

@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # AI provider selection: "ollama" | "openai" | "anthropic"
+    AI_PROVIDER: str = "anthropic"
+
     # OpenAI
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
@@ -35,6 +38,10 @@ class Settings(BaseSettings):
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = ""
+
+    # Ollama (local, OpenAI-compatible). From inside Docker use host.docker.internal.
+    OLLAMA_BASE_URL: str = "http://host.docker.internal:11434/v1"
+    OLLAMA_MODEL: str = "llama3.2"
 
     # AWS S3
     AWS_ACCESS_KEY_ID: str = ""

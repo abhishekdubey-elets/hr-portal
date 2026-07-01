@@ -71,19 +71,22 @@ const sections = [
   },
 ];
 
-export function InterviewKit() {
+export function InterviewKit({ role = "Senior Frontend Engineer" }: { role?: string }) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ "Introduction": true });
   const [openQuestions, setOpenQuestions] = useState<Record<string, boolean>>({});
 
   const toggleSection = (s: string) => setOpenSections((p) => ({ ...p, [s]: !p[s] }));
   const toggleQuestion = (q: string) => setOpenQuestions((p) => ({ ...p, [q]: !p[q] }));
 
+  const totalMinutes = sections.reduce((acc, s) => acc + s.questions.reduce((a, q) => a + q.timeMinutes, 0), 0);
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Brain className="w-4 h-4 text-purple-400" />
-        <p className="text-sm text-gray-400">AI-generated interview kit · Senior Frontend Engineer</p>
-        <Badge variant="purple">GPT-4o</Badge>
+        <p className="text-sm text-gray-400">AI-generated interview kit · {role}</p>
+        <Badge variant="purple">llama3.2</Badge>
+        <span className="text-xs text-gray-500">~{totalMinutes} min total</span>
       </div>
 
       {sections.map((s) => (

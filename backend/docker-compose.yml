@@ -9,6 +9,8 @@
       - REDIS_URL=redis://redis:6379/0
     env_file:
       - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy

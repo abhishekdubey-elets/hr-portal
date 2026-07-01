@@ -130,3 +130,16 @@ export interface AnalyticsData {
   screened: number;
   interviewed: number;
 }
+
+export interface ScheduledInterview {
+  id: string;
+  candidate: string;
+  role: string;
+  time: string;
+  duration: string;
+  type: string;
+  interviewers: string[];
+  status: "scheduled" | "completed" | "cancelled";
+  candidateId?: string;
+  meetingLink?: string;
+}

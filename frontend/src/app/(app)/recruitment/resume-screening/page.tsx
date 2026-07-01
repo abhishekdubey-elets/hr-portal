@@ -1,16 +1,19 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { ResumeScreener } from "@/components/recruitment/ResumeScreener";
 import { CandidateCard } from "@/components/recruitment/CandidateCard";
 import { Badge } from "@/components/ui/Badge";
 import { screenResumes } from "@/lib/api";
+import { useStore } from "@/store";
 import type { Candidate } from "@/types";
 
 export default function ResumeScreeningPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<Candidate[]>([]);
   const [processed, setProcessed] = useState(false);
+  const addCandidates = useStore((s) => s.addCandidates);
 
   const handleProcess = async (files: File[]) => {
     setIsProcessing(true);
@@ -18,6 +21,13 @@ export default function ResumeScreeningPage() {
       const candidates = await screenResumes(files, "Senior Frontend Engineer with 5+ years React/TypeScript");
       setResults(candidates);
       setProcessed(true);
+      if (candidates.length > 0) {
+        addCandidates(candidates);
+        toast.success(
+          `${candidates.length} candidate${candidates.length > 1 ? "s" : ""} added to pipeline`,
+          { description: "View them under Candidates → Screening." }
+        );
+      }
     } finally {
       setIsProcessing(false);
     }

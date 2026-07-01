@@ -93,7 +93,7 @@ async def screen_resume(resume_text: str, job_data: Dict[str, Any]) -> Dict[str,
     response = await ai_service.complete(
         messages=[{"role": "user", "content": prompt}],
         system=SYSTEM_PROMPT,
-        provider="anthropic",
+        response_format={"type": "json_object"},
     )
 
     try:
