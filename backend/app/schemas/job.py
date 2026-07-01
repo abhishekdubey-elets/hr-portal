@@ -62,3 +62,18 @@ class GenerateJDRequest(BaseModel):
 class GenerateJDResponse(BaseModel):
     job_id: int
     versions: Dict[str, str]
+
+
+class GenerateJDPreviewRequest(BaseModel):
+    title: str
+    department: Optional[str] = None
+    level: Optional[str] = None
+    location: Optional[str] = None
+    salary_min: Optional[Decimal] = None
+    salary_max: Optional[Decimal] = None
+    requirements: str
+    tone: Optional[str] = "professional"
+
+
+class GenerateJDPreviewResponse(BaseModel):
+    versions: Dict[str, str]

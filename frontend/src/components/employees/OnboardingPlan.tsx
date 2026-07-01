@@ -1,7 +1,11 @@
 "use client";
+import { useState } from "react";
 import { CheckCircle, Circle, Calendar, Users, BookOpen, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OnboardingTask } from "@/types";
+
+const durations = [30, 60, 90] as const;
+type Duration = (typeof durations)[number];
 
 interface OnboardingPlanProps {
   employeeName: string;
@@ -31,26 +35,43 @@ const dayGroups = [
 ];
 
 export function OnboardingPlan({ employeeName, startDate, tasks, onToggleTask }: OnboardingPlanProps) {
-  const completed = tasks.filter((t) => t.completed).length;
-  const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+  const [duration, setDuration] = useState<Duration>(90);
+
+  const planTasks = tasks.filter((t) => t.day <= duration);
+  const completed = planTasks.filter((t) => t.completed).length;
+  const progress = planTasks.length ? Math.round((completed / planTasks.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">{employeeName}&apos;s 90-Day Plan</h3>
+          <h3 className="text-lg font-semibold text-white">{employeeName}&apos;s {duration}-Day Plan</h3>
           <p className="text-sm text-gray-400">Starting {startDate}</p>
         </div>
         <div className="text-right">
           <p className="text-2xl font-bold text-white">{progress}%</p>
-          <p className="text-xs text-gray-400">{completed}/{tasks.length} tasks</p>
+          <p className="text-xs text-gray-400">{completed}/{planTasks.length} tasks</p>
         </div>
+      </div>
+      <div className="inline-flex items-center gap-1 p-1 bg-[#111114] border border-[#1E1E24] rounded-xl">
+        {durations.map((d) => (
+          <button
+            key={d}
+            onClick={() => setDuration(d)}
+            className={cn(
+              "px-4 py-1.5 text-sm font-medium rounded-lg transition-colors",
+              duration === d ? "bg-purple-500 text-white" : "text-gray-400 hover:text-white"
+            )}
+          >
+            {d} Days
+          </button>
+        ))}
       </div>
       <div className="h-2 bg-[#111114] rounded-full overflow-hidden">
         <div className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
       {dayGroups.map((group) => {
-        const groupTasks = tasks.filter((t) => group.days.includes(t.day));
+        const groupTasks = planTasks.filter((t) => group.days.includes(t.day));
         if (groupTasks.length === 0) return null;
         return (
           <div key={group.label}>

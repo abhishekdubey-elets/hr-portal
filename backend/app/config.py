@@ -1,6 +1,6 @@
 ﻿from typing import List, Optional
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
+from pydantic import ConfigDict, field_validator
 import json
 
 
@@ -29,12 +29,12 @@ class Settings(BaseSettings):
 
     # OpenAI
     OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4-turbo-preview"
+    OPENAI_MODEL: str = "gpt-4o-mini"
     OPENAI_MAX_TOKENS: int = 4096
 
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
-    ANTHROPIC_MODEL: str = "claude-3-5-sonnet-20241022"
+    ANTHROPIC_MODEL: str = ""
 
     # AWS S3
     AWS_ACCESS_KEY_ID: str = ""
@@ -64,10 +64,12 @@ class Settings(BaseSettings):
                 return [i.strip() for i in v.split(",")]
         return v
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
 
 settings = Settings()

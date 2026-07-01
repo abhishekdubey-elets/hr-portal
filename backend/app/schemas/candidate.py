@@ -57,3 +57,19 @@ class ScreenResumeResponse(BaseModel):
     skills: List[str]
     summary: str
     recommendation: str
+
+
+class ScreenResumePreviewResponse(BaseModel):
+    name: str = ""
+    email: str = ""
+    location: str = ""
+    current_company: str = ""
+    current_title: str = ""
+    years_experience: float = 0
+    ai_score: Dict[str, Any]
+    pros: List[str]
+    cons: List[str]
+    red_flags: List[str]
+    skills: List[str]
+    summary: str = ""
+    recommendation: str = "maybe"

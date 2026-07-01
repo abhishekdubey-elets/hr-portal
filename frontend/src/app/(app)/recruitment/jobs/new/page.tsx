@@ -5,28 +5,42 @@ import { JDGenerator } from "@/components/recruitment/JDGenerator";
 import { Button } from "@/components/ui/Button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { generateJD } from "@/lib/api";
+import { generateJD, type GeneratedJDVersions } from "@/lib/api";
 
 const formats = ["Professional", "LinkedIn", "Indeed", "Short", "Internal"];
+const formatKeys: Record<string, keyof GeneratedJDVersions> = {
+  Professional: "professional",
+  LinkedIn: "linkedin",
+  Indeed: "indeed",
+  Short: "short",
+  Internal: "internal",
+};
 
 export default function NewJobPage() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedJD, setGeneratedJD] = useState<string | null>(null);
+  const [generatedJDs, setGeneratedJDs] = useState<GeneratedJDVersions | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeFormat, setActiveFormat] = useState("Professional");
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async (data: Parameters<typeof generateJD>[0]) => {
     setIsGenerating(true);
+    setError(null);
     try {
-      const jd = await generateJD({ ...data, format: activeFormat });
-      setGeneratedJD(jd);
+      const versions = await generateJD({ ...data, format: activeFormat });
+      setGeneratedJDs(versions);
+      setCopied(false);
+    } catch (err) {
+      setGeneratedJDs(null);
+      setError(err instanceof Error ? err.message : "Failed to generate job description");
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleCopy = () => {
-    if (generatedJD) { navigator.clipboard.writeText(generatedJD); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    const currentJD = generatedJDs?.[formatKeys[activeFormat]];
+    if (currentJD) { navigator.clipboard.writeText(currentJD); setCopied(true); setTimeout(() => setCopied(false), 2000); }
   };
 
   return (
@@ -43,7 +57,7 @@ export default function NewJobPage() {
         <div className="bg-[#16161A] border border-[#1E1E24] rounded-2xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Generated JD</h2>
-            {generatedJD && (
+            {generatedJDs?.[formatKeys[activeFormat]] && (
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" leftIcon={copied ? <CheckCheck className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />} onClick={handleCopy}>{copied ? "Copied!" : "Copy"}</Button>
                 <Button variant="outline" size="sm" leftIcon={<Download className="w-3.5 h-3.5" />}>Export</Button>
@@ -60,8 +74,13 @@ export default function NewJobPage() {
                     <Skeleton className="h-6 w-64" /><Skeleton className="h-4 w-48" />
                     <div className="space-y-2 mt-4">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className={`h-3.5 ${i%3===2?"w-3/4":"w-full"}`} />)}</div>
                   </div>
-                ) : generatedJD ? (
-                  <div className="bg-[#111114] rounded-xl p-5 overflow-y-auto max-h-[600px] text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-mono">{generatedJD}</div>
+                ) : generatedJDs?.[formatKeys[f]] ? (
+                  <div className="bg-[#111114] rounded-xl p-5 overflow-y-auto max-h-[600px] text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-mono">{generatedJDs[formatKeys[f]]}</div>
+                ) : error ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-20 text-center">
+                    <p className="text-white font-semibold mb-1">Generation failed</p>
+                    <p className="text-gray-400 text-sm max-w-md">{error}</p>
+                  </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center py-20 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4">

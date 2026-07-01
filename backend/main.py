@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import structlog
 
 from app.config import settings
+from app.services.ai_service import AICompletionError
 from app.database import engine, Base
 from app.routers import (
     auth, dashboard, jobs, candidates, interviews,
@@ -44,6 +46,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(AICompletionError)
+async def ai_completion_error_handler(request: Request, exc: AICompletionError):
+    # Handled here (inside the CORS middleware) so the browser receives a clear
+    # 502 with CORS headers instead of an opaque "No Access-Control-Allow-Origin" error.
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": str(exc)},
+    )
+
+
 API = "/api/v1"
 
 app.include_router(auth.router, prefix=f"{API}/auth", tags=["Authentication"])
@@ -68,4 +80,4 @@ async def health():
 
 @app.get("/")
 async def root():
-    return {"message": "PeopleAI API — visit /api/docs for Swagger UI"}
+    return {"message": "PeopleAI API Swagger UI"}

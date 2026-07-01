@@ -1,6 +1,4 @@
-﻿version: "3.9"
-
-services:
+﻿services:
   app:
     build: .
     container_name: peopleai_app
@@ -19,21 +17,6 @@ services:
     volumes:
       - .:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-  celery_worker:
-    build: .
-    container_name: peopleai_celery
-    command: celery -A app.celery_app worker --loglevel=info
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/peopleai
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - .:/app
 
   postgres:
     image: ankane/pgvector:latest

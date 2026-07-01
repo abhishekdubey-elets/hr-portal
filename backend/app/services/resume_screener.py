@@ -22,6 +22,9 @@ RESUME TEXT:
 
 Provide your analysis as a JSON object with these exact fields:
 {{
+  "name": "candidate full name from the resume, empty string if not found",
+  "email": "candidate email from the resume, empty string if not found",
+  "location": "candidate location/city from the resume, empty string if not found",
   "ai_score": {{
     "overall": <0-100>,
     "skill_match": <0-100>,
@@ -102,11 +105,17 @@ async def screen_resume(resume_text: str, job_data: Dict[str, Any]) -> Dict[str,
     except Exception as e:
         logger.error(f"Failed to parse screening response: {e}")
         return {
+            "name": "",
+            "email": "",
+            "location": "",
             "ai_score": {"overall": 0, "skill_match": 0, "experience_match": 0, "culture_match": 0, "education_match": 0},
             "pros": [],
             "cons": ["Unable to parse resume"],
             "red_flags": [],
             "skills": [],
+            "current_company": "",
+            "current_title": "",
+            "years_experience": 0,
             "summary": "Analysis failed",
             "recommendation": "maybe",
         }

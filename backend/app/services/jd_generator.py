@@ -33,6 +33,100 @@ Return a valid JSON object with keys: professional, linkedin, indeed, short, int
 Each value should be the complete text of that JD version."""
 
 
+def _fallback_versions(
+    job_data: Dict[str, Any],
+    salary_range: str,
+    additional_context: Optional[str] = None,
+) -> Dict[str, str]:
+    title = job_data.get("title") or "Job Opening"
+    department = job_data.get("department") or "General"
+    experience_level = job_data.get("experience_level") or "Mid"
+    location = job_data.get("location") or "Not specified"
+    remote_text = "Remote-friendly" if job_data.get("is_remote") else "On-site/Hybrid"
+    requirements = job_data.get("requirements") or "Relevant experience and strong collaboration skills."
+    description = job_data.get("description") or f"You will help drive important outcomes for the {department} team."
+    context = additional_context or "No additional context provided."
+
+    return {
+        "professional": f"""# {title}
+Department: {department}
+Level: {experience_level}
+Location: {location}
+Work Model: {remote_text}
+Salary: {salary_range}
+
+## Overview
+We are looking for a {title} to join our {department} team. This person will take ownership of meaningful work, collaborate across teams, and contribute to high-quality execution.
+
+## Key Responsibilities
+- Drive initiatives aligned with team priorities
+- Partner with stakeholders across functions
+- Improve processes, communication, and delivery
+- Bring sound judgment and strong execution to day-to-day work
+
+## Requirements
+{requirements}
+
+## Why Join Us
+{description}
+
+## Additional Context
+{context}
+""",
+        "linkedin": f"""We're hiring a {title} for our {department} team.
+
+Location: {location}
+Level: {experience_level}
+Work Model: {remote_text}
+Salary: {salary_range}
+
+What you'll bring:
+{requirements}
+
+Why this role stands out:
+{description}
+
+Additional context: {context}
+""",
+        "indeed": f"""{title}
+
+Department: {department}
+Location: {location}
+Experience Level: {experience_level}
+Work Model: {remote_text}
+Salary: {salary_range}
+
+Responsibilities:
+- Deliver high-quality work aligned with team goals
+- Collaborate effectively across teams
+- Support continuous improvement and execution
+
+Requirements:
+{requirements}
+
+Role summary:
+{description}
+""",
+        "short": f"""{title} | {department} | {location}
+Seeking a {experience_level}-level professional. Requirements: {requirements}
+Salary: {salary_range}. {context}""",
+        "internal": f"""Internal Opportunity: {title}
+
+Team: {department}
+Location: {location}
+Level: {experience_level}
+
+We are opening an internal role for a {title}. This position offers the chance to expand scope, partner cross-functionally, and contribute to important priorities.
+
+Requirements:
+{requirements}
+
+Manager context:
+{context}
+""",
+    }
+
+
 async def generate_job_descriptions(job_data: Dict[str, Any], additional_context: Optional[str] = None) -> Dict[str, str]:
     salary_range = "Not specified"
     if job_data.get("salary_min") and job_data.get("salary_max"):

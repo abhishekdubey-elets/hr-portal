@@ -1,5 +1,4 @@
 "use client";
-import * as ToastPrimitive from "@radix-ui/react-toast";
 import { X, CheckCircle, AlertTriangle, XCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { create } from "zustand";
@@ -51,33 +50,29 @@ export function ToastProvider() {
   const { toasts, removeToast } = useToastStore();
 
   return (
-    <ToastPrimitive.Provider>
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex max-w-sm flex-col gap-3">
       {toasts.map((t) => (
-        <ToastPrimitive.Root
+        <div
           key={t.id}
-          open
-          onOpenChange={(open) => !open && removeToast(t.id)}
           className={cn(
-            "fixed bottom-4 right-4 z-[100] flex items-start gap-3 p-4 rounded-xl border shadow-2xl max-w-sm",
+            "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-2xl",
             "bg-[#16161A] border-[#1E1E24] animate-in slide-in-from-right-2"
           )}
         >
           <div className="mt-0.5">{icons[t.type]}</div>
-          <div className="flex-1 min-w-0">
-            <ToastPrimitive.Title className="text-sm font-medium text-white">{t.title}</ToastPrimitive.Title>
-            {t.description && (
-              <ToastPrimitive.Description className="text-xs text-gray-400 mt-0.5">{t.description}</ToastPrimitive.Description>
-            )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white">{t.title}</p>
+            {t.description && <p className="mt-0.5 text-xs text-gray-400">{t.description}</p>}
           </div>
-          <ToastPrimitive.Close
+          <button
+            type="button"
             onClick={() => removeToast(t.id)}
-            className="text-gray-500 hover:text-white transition-colors"
+            className="text-gray-500 transition-colors hover:text-white"
           >
             <X className="w-4 h-4" />
-          </ToastPrimitive.Close>
-        </ToastPrimitive.Root>
+          </button>
+        </div>
       ))}
-      <ToastPrimitive.Viewport />
-    </ToastPrimitive.Provider>
+    </div>
   );
 }

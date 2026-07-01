@@ -7,12 +7,43 @@ import logging
 from app.database import get_db
 from app.models.job import Job, JobStatus
 from app.models.user import User
-from app.schemas.job import JobCreate, JobUpdate, JobResponse, GenerateJDRequest, GenerateJDResponse
+from app.schemas.job import (
+    JobCreate,
+    JobUpdate,
+    JobResponse,
+    GenerateJDRequest,
+    GenerateJDResponse,
+    GenerateJDPreviewRequest,
+    GenerateJDPreviewResponse,
+)
 from app.dependencies import get_current_user
 from app.services.jd_generator import generate_job_descriptions
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+@router.post("/generate-jd-preview", response_model=GenerateJDPreviewResponse)
+async def generate_jd_preview(request: GenerateJDPreviewRequest):
+    job_data = {
+        "title": request.title,
+        "department": request.department,
+        "employment_type": "Full-time",
+        "experience_level": request.level or "Mid",
+        "location": request.location,
+        "is_remote": bool(request.location and request.location.lower() == "remote"),
+        "salary_min": float(request.salary_min) if request.salary_min is not None else None,
+        "salary_max": float(request.salary_max) if request.salary_max is not None else None,
+        "currency": "USD",
+        "description": "",
+        "requirements": request.requirements,
+        "benefits": "",
+        "skills_required": [],
+    }
+
+    additional_context = f"Preferred tone: {request.tone or 'professional'}."
+    versions = await generate_job_descriptions(job_data, additional_context)
+    return GenerateJDPreviewResponse(versions=versions)
 
 
 @router.get("/", response_model=List[JobResponse])

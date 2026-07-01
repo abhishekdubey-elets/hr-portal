@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -9,12 +9,70 @@ from app.database import get_db
 from app.models.candidate import Candidate, CandidateStage
 from app.models.job import Job
 from app.models.user import User
-from app.schemas.candidate import CandidateCreate, CandidateUpdate, CandidateResponse, ScreenResumeResponse
+from app.schemas.candidate import (
+    CandidateCreate,
+    CandidateUpdate,
+    CandidateResponse,
+    ScreenResumeResponse,
+    ScreenResumePreviewResponse,
+)
 from app.dependencies import get_current_user
 from app.services.resume_screener import extract_resume_text, screen_resume
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+@router.post("/screen-resume-preview", response_model=ScreenResumePreviewResponse)
+async def screen_resume_preview(
+    resume: UploadFile = File(...),
+    title: str = Form(""),
+    requirements: str = Form(""),
+    skills: str = Form(""),
+    experience_level: str = Form(""),
+):
+    content = await resume.read()
+    content_type = resume.content_type or "application/pdf"
+    resume_text = await extract_resume_text(content, content_type)
+
+    if not resume_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not extract text from {resume.filename or 'resume'}",
+        )
+
+    job_data = {
+        "title": title,
+        "skills_required": [s.strip() for s in skills.split(",") if s.strip()],
+        "experience_level": experience_level,
+        "requirements": requirements,
+        "description": requirements,
+    }
+
+    analysis = await screen_resume(resume_text, job_data)
+
+    return ScreenResumePreviewResponse(
+        name=analysis.get("name", "") or "",
+        email=analysis.get("email", "") or "",
+        location=analysis.get("location", "") or "",
+        current_company=analysis.get("current_company", "") or "",
+        current_title=analysis.get("current_title", "") or "",
+        years_experience=_to_float(analysis.get("years_experience", 0)),
+        ai_score=analysis.get("ai_score", {}),
+        pros=analysis.get("pros", []),
+        cons=analysis.get("cons", []),
+        red_flags=analysis.get("red_flags", []),
+        skills=analysis.get("skills", []),
+        summary=analysis.get("summary", ""),
+        recommendation=analysis.get("recommendation", "maybe"),
+    )
 
 
 @router.get("/", response_model=List[CandidateResponse])

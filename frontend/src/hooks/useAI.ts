@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { generateJD, screenResumes } from "@/lib/api";
+import { generateJD, screenResumes, type GeneratedJDVersions } from "@/lib/api";
 import type { Candidate } from "@/types";
 
 export function useAI() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isScreening, setIsScreening] = useState(false);
-  const [generatedJD, setGeneratedJD] = useState<string | null>(null);
+  const [generatedJD, setGeneratedJD] = useState<GeneratedJDVersions | null>(null);
   const [screenedCandidates, setScreenedCandidates] = useState<Candidate[]>([]);
 
   const generateJDMutation = useMutation({

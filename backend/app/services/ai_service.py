@@ -6,6 +6,10 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+class AICompletionError(Exception):
+    """Raised when all configured AI providers fail to complete a request."""
+
+
 class AIService:
     def __init__(self):
         self._openai_client = None
@@ -85,10 +89,19 @@ class AIService:
             logger.error(f"AI completion failed with {provider}: {e}")
             if provider == "anthropic":
                 logger.info("Falling back to OpenAI")
-                if system:
-                    messages = [{"role": "system", "content": system}] + messages
-                return await self.complete_openai(messages, **kwargs)
-            raise
+                try:
+                    if system:
+                        messages = [{"role": "system", "content": system}] + messages
+                    return await self.complete_openai(messages, **kwargs)
+                except Exception as fallback_error:
+                    logger.error(f"AI completion fallback to OpenAI failed: {fallback_error}")
+                    raise AICompletionError(
+                        "AI providers are unavailable. Check that a valid ANTHROPIC_API_KEY "
+                        "or a funded OPENAI_API_KEY is configured."
+                    ) from fallback_error
+            raise AICompletionError(
+                f"AI provider '{provider}' is unavailable. Check the configured API key and model."
+            ) from e
 
 
 ai_service = AIService()
