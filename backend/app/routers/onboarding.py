@@ -11,10 +11,32 @@ from app.models.employee import Employee
 from app.models.user import User
 from app.models.organization import Organization
 from app.dependencies import get_current_user
-from app.services.onboarding_service import generate_onboarding_plan
+from app.services.onboarding_service import generate_onboarding_plan, generate_onboarding_plan_preview
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+class OnboardingTaskPreview(BaseModel):
+    title: str
+    description: str = ""
+    category: str
+    day: int
+
+
+class GeneratePlanPreviewRequest(BaseModel):
+    name: str
+    role: Optional[str] = ""
+
+
+class GeneratePlanPreviewResponse(BaseModel):
+    tasks: List[OnboardingTaskPreview]
+
+
+@router.post("/generate-plan-preview", response_model=GeneratePlanPreviewResponse)
+async def generate_plan_preview(request: GeneratePlanPreviewRequest):
+    tasks = await generate_onboarding_plan_preview(request.name, request.role or "")
+    return GeneratePlanPreviewResponse(tasks=[OnboardingTaskPreview(**t) for t in tasks])
 
 
 class OnboardingPlanResponse(BaseModel):

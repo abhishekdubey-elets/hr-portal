@@ -7,6 +7,9 @@ import { OnboardingPlan } from "@/components/employees/OnboardingPlan";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { generateOnboardingPlan } from "@/lib/api";
+import { generateId } from "@/lib/utils";
 import type { OnboardingTask } from "@/types";
 
 const mockPlan = {
@@ -42,11 +45,48 @@ export default function OnboardingPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [generating, setGenerating] = useState(false);
 
   const selectedHire = hires.find((h) => h.name === selected);
 
   const toggleTask = (id: string) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+
+  const allowedCategories = ["setup", "training", "meet", "review"] as const;
+
+  const handleGeneratePlan = async () => {
+    if (!selectedHire) {
+      toast.error("Select a new hire first");
+      return;
+    }
+    setGenerating(true);
+    const t = toast.loading(`Generating a 90-day plan for ${selectedHire.name}…`, {
+      description: "Your local model is drafting the onboarding tasks.",
+    });
+    try {
+      const dto = await generateOnboardingPlan(selectedHire.name, selectedHire.role);
+      if (dto.length === 0) throw new Error("The model returned no tasks. Try again.");
+      const generated: OnboardingTask[] = dto.map((d) => ({
+        id: `ai-${generateId()}`,
+        title: d.title,
+        description: d.description,
+        category: (allowedCategories.includes(d.category as (typeof allowedCategories)[number])
+          ? d.category
+          : "training") as OnboardingTask["category"],
+        day: d.day,
+        completed: false,
+      }));
+      setTasks(generated);
+      toast.success(`Onboarding plan generated`, { id: t, description: `${generated.length} tasks for ${selectedHire.name}` });
+    } catch (err) {
+      toast.error("Couldn't generate plan", {
+        id: t,
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const set = (key: keyof typeof emptyForm, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -110,15 +150,35 @@ export default function OnboardingPage() {
             </button>
           ))}
           <button
-            onClick={() => setOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/[0.08] p-4 text-sm text-gray-500 transition-colors hover:border-[#8B5CF6]/30 hover:text-[#a78bfa]"
+            onClick={handleGeneratePlan}
+            disabled={generating || !selectedHire}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/[0.08] p-4 text-sm text-gray-500 transition-colors hover:border-[#8B5CF6]/30 hover:text-[#a78bfa] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Sparkles className="h-4 w-4" /> Generate AI Plan
+            <Sparkles className={`h-4 w-4 ${generating ? "animate-pulse" : ""}`} />
+            {generating ? "Generating…" : selectedHire ? `Generate AI Plan for ${selectedHire.name.split(" ")[0]}` : "Generate AI Plan"}
           </button>
         </div>
 
         <div className="rounded-3xl border border-white/[0.06] bg-[#16161A]/90 p-6 xl:col-span-3">
-          {selectedHire ? (
+          {generating ? (
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 text-sm text-[#a78bfa]">
+                <Sparkles className="h-4 w-4 animate-pulse" />
+                Drafting a personalized 90-day plan with your local model…
+              </div>
+              <div className="space-y-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3 rounded-xl border border-white/[0.05] bg-[#111114] p-3">
+                    <Skeleton variant="circle" className="h-5 w-5" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3.5 w-2/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : selectedHire ? (
             <OnboardingPlan
               employeeName={selectedHire.name}
               startDate={selectedHire.start}
